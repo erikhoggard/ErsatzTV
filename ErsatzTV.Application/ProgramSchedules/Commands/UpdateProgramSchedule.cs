@@ -10,4 +10,5 @@ public record UpdateProgramSchedule(
     bool TreatCollectionsAsShows,
     bool ShuffleScheduleItems,
     bool RandomStartPoint,
+    bool UseCustomProbabilities,
     FixedStartTimeBehavior FixedStartTimeBehavior) : IRequest<Either<BaseError, UpdateProgramScheduleResult>>;

@@ -19,7 +19,9 @@ public class GetAllProgramSchedulesHandler(IDbContextFactory<TvContext> dbContex
                 ps.TreatCollectionsAsShows,
                 ps.ShuffleScheduleItems,
                 ps.RandomStartPoint,
-                ps.FixedStartTimeBehavior))
+                ps.UseCustomProbabilities,
+                ps.FixedStartTimeBehavior,
+                new List<ProgramScheduleLoadDistributionViewModel>()))
             .ToListAsync(cancellationToken);
     }
 }

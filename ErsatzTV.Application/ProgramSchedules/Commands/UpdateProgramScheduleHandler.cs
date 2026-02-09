@@ -35,6 +35,7 @@ public class UpdateProgramScheduleHandler(
             programSchedule.TreatCollectionsAsShows != request.TreatCollectionsAsShows ||
             programSchedule.ShuffleScheduleItems != request.ShuffleScheduleItems ||
             programSchedule.RandomStartPoint != request.RandomStartPoint ||
+            programSchedule.UseCustomProbabilities != request.UseCustomProbabilities ||
             programSchedule.FixedStartTimeBehavior != request.FixedStartTimeBehavior;
 
         programSchedule.Name = request.Name;
@@ -43,6 +44,7 @@ public class UpdateProgramScheduleHandler(
                                                   request.TreatCollectionsAsShows;
         programSchedule.ShuffleScheduleItems = request.ShuffleScheduleItems;
         programSchedule.RandomStartPoint = request.RandomStartPoint;
+        programSchedule.UseCustomProbabilities = request.UseCustomProbabilities;
         programSchedule.FixedStartTimeBehavior = request.FixedStartTimeBehavior;
 
         await dbContext.SaveChangesAsync();

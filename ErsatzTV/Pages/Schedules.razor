@@ -53,6 +53,11 @@
                                                Href="@($"schedules/{context.Id}/items")">
                                 </MudIconButton>
                             </MudTooltip>
+                            <MudTooltip Text="Edit Show Probabilities">
+                                <MudIconButton Icon="@Icons.Material.Filled.Equalizer"
+                                               Href="@($"schedules/{context.Id}/probabilities")">
+                                </MudIconButton>
+                            </MudTooltip>
                             <MudTooltip Text="Copy Schedule">
                                 <MudIconButton Icon="@Icons.Material.Filled.ContentCopy"
                                                OnClick="@(_ => CopySchedule(context))">

@@ -2327,6 +2327,9 @@ namespace ErsatzTV.Infrastructure.MySql.Migrations
                     b.Property<bool>("TreatCollectionsAsShows")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<bool>("UseCustomProbabilities")
+                        .HasColumnType("tinyint(1)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Name")
@@ -2551,6 +2554,47 @@ namespace ErsatzTV.Infrastructure.MySql.Migrations
                     b.HasIndex("WatermarkId");
 
                     b.ToTable("ProgramScheduleItemWatermark");
+                });
+
+            modelBuilder.Entity("ErsatzTV.Core.Domain.ProgramScheduleLoadDistribution", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int?>("CollectionId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("MediaItemId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("MultiCollectionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("ProgramScheduleId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("SmartCollectionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Weight")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CollectionId");
+
+                    b.HasIndex("MediaItemId");
+
+                    b.HasIndex("MultiCollectionId");
+
+                    b.HasIndex("ProgramScheduleId");
+
+                    b.HasIndex("SmartCollectionId");
+
+                    b.ToTable("ProgramScheduleLoadDistribution", (string)null);
                 });
 
             modelBuilder.Entity("ErsatzTV.Core.Domain.RemoteStreamMetadata", b =>
@@ -5577,6 +5621,45 @@ namespace ErsatzTV.Infrastructure.MySql.Migrations
                     b.Navigation("Watermark");
                 });
 
+            modelBuilder.Entity("ErsatzTV.Core.Domain.ProgramScheduleLoadDistribution", b =>
+                {
+                    b.HasOne("ErsatzTV.Core.Domain.Collection", "Collection")
+                        .WithMany()
+                        .HasForeignKey("CollectionId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("ErsatzTV.Core.Domain.MediaItem", "MediaItem")
+                        .WithMany()
+                        .HasForeignKey("MediaItemId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("ErsatzTV.Core.Domain.MultiCollection", "MultiCollection")
+                        .WithMany()
+                        .HasForeignKey("MultiCollectionId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("ErsatzTV.Core.Domain.ProgramSchedule", "ProgramSchedule")
+                        .WithMany("LoadDistributions")
+                        .HasForeignKey("ProgramScheduleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ErsatzTV.Core.Domain.SmartCollection", "SmartCollection")
+                        .WithMany()
+                        .HasForeignKey("SmartCollectionId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Collection");
+
+                    b.Navigation("MediaItem");
+
+                    b.Navigation("MultiCollection");
+
+                    b.Navigation("ProgramSchedule");
+
+                    b.Navigation("SmartCollection");
+                });
+
             modelBuilder.Entity("ErsatzTV.Core.Domain.RemoteStreamMetadata", b =>
                 {
                     b.HasOne("ErsatzTV.Core.Domain.RemoteStream", "RemoteStream")
@@ -6776,6 +6859,8 @@ namespace ErsatzTV.Infrastructure.MySql.Migrations
             modelBuilder.Entity("ErsatzTV.Core.Domain.ProgramSchedule", b =>
                 {
                     b.Navigation("Items");
+
+                    b.Navigation("LoadDistributions");
 
                     b.Navigation("Playouts");
 

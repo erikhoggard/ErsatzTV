@@ -1304,6 +1304,31 @@ public class PlayoutBuilder : IPlayoutBuilder
 
         state ??= new CollectionEnumeratorState { Seed = random.Next(), Index = 0 };
 
+        if (activeSchedule.UseCustomProbabilities &&
+            playbackOrder is PlaybackOrder.Shuffle or PlaybackOrder.ShuffleInOrder or PlaybackOrder.Random
+                or PlaybackOrder.Chronological or PlaybackOrder.SeasonEpisode or PlaybackOrder.MultiEpisodeShuffle
+                or PlaybackOrder.Marathon)
+        {
+            var weights = activeSchedule.LoadDistributions
+                .ToDictionary(ld => ld.MediaItemId ?? 0, ld => ld.Weight)
+                .ToMap();
+
+            List<GroupedMediaItem> groupedItems = await GetGroupedMediaItemsForShuffle(
+                _mediaCollectionRepository,
+                activeSchedule,
+                mediaItems,
+                collectionKey,
+                cancellationToken);
+
+            return new WeightedMediaCollectionEnumerator(
+                groupedItems,
+                weights,
+                playbackOrder,
+                state,
+                _logger,
+                cancellationToken);
+        }
+
         if (collectionKey.CollectionType is CollectionType.RerunFirstRun or CollectionType.RerunRerun)
         {
             await _rerunHelper.InitWithMediaItems(playout.Id, collectionKey, mediaItems, cancellationToken);

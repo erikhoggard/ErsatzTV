@@ -9,4 +9,6 @@ public record ProgramScheduleViewModel(
     bool TreatCollectionsAsShows,
     bool ShuffleScheduleItems,
     bool RandomStartPoint,
-    FixedStartTimeBehavior FixedStartTimeBehavior);
+    bool UseCustomProbabilities,
+    FixedStartTimeBehavior FixedStartTimeBehavior,
+    List<ProgramScheduleLoadDistributionViewModel> LoadDistributions);

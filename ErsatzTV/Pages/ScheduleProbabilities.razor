@@ -1,0 +1,182 @@
+@page "/schedules/{Id:int}/probabilities"
+@using ErsatzTV.Application.MediaItems
+@using ErsatzTV.Application.ProgramSchedules
+@implements IDisposable
+@inject NavigationManager NavigationManager
+@inject ILogger<ScheduleProbabilities> Logger
+@inject ISnackbar Snackbar
+@inject IMediator Mediator
+
+<MudPaper Square="true" Style="display: flex; height: 64px; min-height: 64px; width: 100%; z-index: 100; align-items: center">
+    <div style="display: flex; flex-direction: row; margin-bottom: auto; margin-top: auto; width: 100%; align-items: center" class="ml-6 mr-6">
+        <div class="flex-grow-1">
+            <MudText>@_scheduleName - Show Probabilities</MudText>
+        </div>
+        <div style="margin-left: auto" class="d-none d-md-flex">
+            <MudButton Variant="Variant.Filled" Color="Color.Secondary" OnClick="@ResetToEpisodeCounts" StartIcon="@Icons.Material.Filled.Restore" Class="mr-3">
+                Reset to Episode Counts
+            </MudButton>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@SaveChanges" StartIcon="@Icons.Material.Filled.Save">
+                Save Probabilities
+            </MudButton>
+        </div>
+    </div>
+</MudPaper>
+
+<div class="d-flex flex-column" style="height: 100vh; overflow-x: auto">
+    <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pt-8">
+        <MudText Typo="Typo.h5" Class="mb-2">Show Probabilities</MudText>
+        <MudText Typo="Typo.body2" Class="mb-6">Adjust weights to determine how likely each show is to be selected.</MudText>
+        <MudDivider Class="mb-6"/>
+
+        @if (_isLoading)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="my-7"/>
+        }
+        else
+        {
+            <MudTable Items="_showProbabilities" Hover="true" Dense="true">
+                <HeaderContent>
+                    <MudTh>Show</MudTh>
+                    <MudTh>Weight</MudTh>
+                    <MudTh>Probability %</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Show">@context.Name</MudTd>
+                    <MudTd DataLabel="Weight">
+                        <div style="display: flex; align-items: center; width: 100%">
+                            <MudSlider T="int" @bind-Value="context.Weight" Min="0" Max="100" Color="Color.Primary" Class="flex-grow-1 mr-4"/>
+                            <MudNumericField @bind-Value="context.Weight" Min="0" Max="1000" Variant="Variant.Outlined" Margin="Margin.Dense" Style="width: 80px"/>
+                        </div>
+                    </MudTd>
+                    <MudTd DataLabel="Probability %">
+                        @GetProbability(context).ToString("P1")
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+    </MudContainer>
+</div>
+
+@code {
+    private CancellationTokenSource _cts;
+
+    [Parameter]
+    public int Id { get; set; }
+
+    private string _scheduleName;
+    private List<ShowProbabilityEditViewModel> _showProbabilities = new();
+    private bool _isLoading = true;
+
+    public void Dispose()
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _cts?.Cancel();
+        _cts?.Dispose();
+        _cts = new CancellationTokenSource();
+        var token = _cts.Token;
+
+        try
+        {
+            _isLoading = true;
+            
+            Option<ProgramScheduleViewModel> maybeSchedule = await Mediator.Send(new GetProgramScheduleById(Id), token);
+            foreach (ProgramScheduleViewModel schedule in maybeSchedule)
+            {
+                _scheduleName = schedule.Name;
+                
+                Either<BaseError, List<NamedMediaItemViewModel>> showsResult = await Mediator.Send(new GetProgramScheduleShows(Id), token);
+                foreach (List<NamedMediaItemViewModel> shows in showsResult.RightToSeq())
+                {
+                    _showProbabilities = shows.Select(s => new ShowProbabilityEditViewModel
+                    {
+                        MediaItemId = s.MediaItemId,
+                        Name = s.Name,
+                        Weight = schedule.LoadDistributions.FirstOrDefault(ld => ld.MediaItemId == s.MediaItemId)?.Weight ?? 50
+                    }).ToList();
+                }
+            }
+
+            _isLoading = false;
+        }
+        catch (OperationCanceledException)
+        {
+            // do nothing
+        }
+    }
+
+    private double GetProbability(ShowProbabilityEditViewModel item)
+    {
+        int totalWeight = _showProbabilities.Sum(p => p.Weight);
+        if (totalWeight == 0) return 0;
+        return (double)item.Weight / totalWeight;
+    }
+
+    private async Task ResetToEpisodeCounts()
+    {
+        var token = _cts.Token;
+        Either<BaseError, List<NamedMediaItemViewModel>> showsResult = await Mediator.Send(new GetProgramScheduleShows(Id), token);
+        
+        // We need episode counts. GetProgramScheduleShows only returns names. 
+        // We might need to extend the query or fetch counts here.
+        // Let's fetch the counts.
+        
+        foreach (List<NamedMediaItemViewModel> shows in showsResult.RightToSeq())
+        {
+            var newProbabilities = new List<ShowProbabilityEditViewModel>();
+            
+            // This is a bit inefficient (N+1 queries), but simple for a button click action.
+            // A better approach would be to have GetProgramScheduleShows return counts.
+            foreach (var show in shows)
+            {
+                int count = await Mediator.Send(new GetEpisodeCount(show.MediaItemId), token);
+                newProbabilities.Add(new ShowProbabilityEditViewModel
+                {
+                    MediaItemId = show.MediaItemId,
+                    Name = show.Name,
+                    Weight = count > 0 ? count : 1
+                });
+            }
+            
+            _showProbabilities = newProbabilities;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SaveChanges()
+    {
+        var distributions = _showProbabilities.Select(p => new ReplaceProgramScheduleLoadDistribution(
+            p.MediaItemId,
+            null,
+            null,
+            null,
+            p.Weight
+        )).ToList();
+
+        Either<BaseError, Unit> result = await Mediator.Send(new ReplaceProgramScheduleLoadDistributions(Id, distributions), _cts.Token);
+
+        result.Match(
+            _ =>
+            {
+                Snackbar.Add("Probabilities saved successfully", Severity.Success);
+                NavigationManager.NavigateTo("/schedules");
+            },
+            error =>
+            {
+                Snackbar.Add($"Error saving probabilities: {error.Value}", Severity.Error);
+                Logger.LogError("Error saving probabilities: {Error}", error.Value);
+            });
+    }
+
+    private class ShowProbabilityEditViewModel
+    {
+        public int MediaItemId { get; set; }
+        public string Name { get; set; }
+        public int Weight { get; set; }
+    }
+}

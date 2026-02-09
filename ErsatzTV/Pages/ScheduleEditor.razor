@@ -56,6 +56,14 @@
             </MudStack>
             <MudStack Row="true" Breakpoint="Breakpoint.SmAndDown" Class="form-field-stack gap-md-8 mb-5">
                 <div class="d-flex">
+                    <MudText>Use Custom Show Probabilities</MudText>
+                </div>
+                <MudCheckBox @bind-Value="@_model.UseCustomProbabilities" For="@(() => _model.UseCustomProbabilities)" Dense="true">
+                    <MudText Typo="Typo.caption" Style="font-weight: normal">Control how often each show plays relative to others</MudText>
+                </MudCheckBox>
+            </MudStack>
+            <MudStack Row="true" Breakpoint="Breakpoint.SmAndDown" Class="form-field-stack gap-md-8 mb-5">
+                <div class="d-flex">
                     <MudText>Fixed Start Time Behavior</MudText>
                 </div>
                 <MudSelect @bind-Value="@_model.FixedStartTimeBehavior" For="@(() => _model.FixedStartTimeBehavior)">
@@ -104,6 +112,7 @@
                         _model.KeepMultiPartEpisodesTogether = viewModel.KeepMultiPartEpisodesTogether;
                         _model.TreatCollectionsAsShows = viewModel.TreatCollectionsAsShows;
                         _model.RandomStartPoint = viewModel.RandomStartPoint;
+                        _model.UseCustomProbabilities = viewModel.UseCustomProbabilities;
                         _model.FixedStartTimeBehavior = viewModel.FixedStartTimeBehavior;
                     },
                     () => NavigationManager.NavigateTo("404"));

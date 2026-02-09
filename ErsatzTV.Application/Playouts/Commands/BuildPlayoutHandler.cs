@@ -526,6 +526,7 @@ public class BuildPlayoutHandler : IRequestHandler<BuildPlayout, Either<BaseErro
             .ThenInclude(psi => psi.TailFiller)
             .Include(ps => ps.Items)
             .ThenInclude(psi => psi.FallbackFiller)
+            .Include(ps => ps.LoadDistributions)
             .FirstOrDefaultAsync();
 
         List<ProgramScheduleAlternate> programScheduleAlternates = await dbContext.ProgramScheduleAlternates
@@ -560,6 +561,8 @@ public class BuildPlayoutHandler : IRequestHandler<BuildPlayout, Either<BaseErro
             .Include(a => a.ProgramSchedule)
             .ThenInclude(ps => ps.Items)
             .ThenInclude(psi => psi.FallbackFiller)
+            .Include(a => a.ProgramSchedule)
+            .ThenInclude(ps => ps.LoadDistributions)
             .ToListAsync();
 
         List<PlayoutHistory> playoutHistory = await dbContext.PlayoutHistory

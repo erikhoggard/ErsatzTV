@@ -11,6 +11,7 @@ public class ProgramScheduleEditViewModel
     public bool TreatCollectionsAsShows { get; set; }
     public bool ShuffleScheduleItems { get; set; }
     public bool RandomStartPoint { get; set; }
+    public bool UseCustomProbabilities { get; set; }
     public FixedStartTimeBehavior FixedStartTimeBehavior { get; set; }
 
     public UpdateProgramSchedule ToUpdate() =>
@@ -21,6 +22,7 @@ public class ProgramScheduleEditViewModel
             TreatCollectionsAsShows,
             ShuffleScheduleItems,
             RandomStartPoint,
+            UseCustomProbabilities,
             FixedStartTimeBehavior);
 
     public CreateProgramSchedule ToCreate() =>
@@ -30,5 +32,6 @@ public class ProgramScheduleEditViewModel
             TreatCollectionsAsShows,
             ShuffleScheduleItems,
             RandomStartPoint,
+            UseCustomProbabilities,
             FixedStartTimeBehavior);
 }

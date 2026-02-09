@@ -40,6 +40,7 @@ public class CreateProgramScheduleHandler(IDbContextFactory<TvContext> dbContext
                 TreatCollectionsAsShows = keepMultiPartEpisodesTogether && request.TreatCollectionsAsShows,
                 ShuffleScheduleItems = request.ShuffleScheduleItems,
                 RandomStartPoint = request.RandomStartPoint,
+                UseCustomProbabilities = request.UseCustomProbabilities,
                 FixedStartTimeBehavior = request.FixedStartTimeBehavior
             };
         });

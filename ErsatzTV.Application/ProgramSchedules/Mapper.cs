@@ -12,7 +12,27 @@ internal static class Mapper
             programSchedule.TreatCollectionsAsShows,
             programSchedule.ShuffleScheduleItems,
             programSchedule.RandomStartPoint,
-            programSchedule.FixedStartTimeBehavior);
+            programSchedule.UseCustomProbabilities,
+            programSchedule.FixedStartTimeBehavior,
+            Optional(programSchedule.LoadDistributions).Flatten().Map(ProjectToViewModel).ToList());
+
+    internal static ProgramScheduleLoadDistributionViewModel ProjectToViewModel(
+        ProgramScheduleLoadDistribution programScheduleLoadDistribution) =>
+        new(
+            programScheduleLoadDistribution.Id,
+            programScheduleLoadDistribution.MediaItemId,
+            programScheduleLoadDistribution.MediaItem switch
+            {
+                Show show => show.ShowMetadata.HeadOrNone().Map(m => m.Title).IfNone(string.Empty),
+                _ => string.Empty
+            },
+            programScheduleLoadDistribution.CollectionId,
+            programScheduleLoadDistribution.Collection?.Name,
+            programScheduleLoadDistribution.MultiCollectionId,
+            programScheduleLoadDistribution.MultiCollection?.Name,
+            programScheduleLoadDistribution.SmartCollectionId,
+            programScheduleLoadDistribution.SmartCollection?.Name,
+            programScheduleLoadDistribution.Weight);
 
     internal static ProgramScheduleItemViewModel ProjectToViewModel(ProgramScheduleItem programScheduleItem) =>
         programScheduleItem switch
