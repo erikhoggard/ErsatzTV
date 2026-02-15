@@ -428,7 +428,7 @@
     {
         PlayoutBuildMode mode = playout.ScheduleKind switch
         {
-            PlayoutScheduleKind.Classic => PlayoutBuildMode.Refresh,
+            PlayoutScheduleKind.Classic => PlayoutBuildMode.Reset,
             _ => PlayoutBuildMode.Reset
         };
 

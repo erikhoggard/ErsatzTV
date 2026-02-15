@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet --version:*)",
+      "Bash(ls:*)",
+      "Bash(tasklist:*)",
+      "Bash(dotnet publish:*)",
+      "Bash(taskkill:*)",
+      "Bash(sqlite3:*)",
+      "Bash(dotnet tool list:*)",
+      "Bash(git checkout:*)",
+      "Bash(cmd.exe //C \"start ErsatzTV-Windows.exe\")"
+    ]
+  }
+}

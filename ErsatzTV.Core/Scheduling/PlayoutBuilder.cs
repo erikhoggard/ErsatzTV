@@ -1320,15 +1320,17 @@ public class PlayoutBuilder : IPlayoutBuilder
                 collectionKey,
                 cancellationToken);
 
+            // Apply same randomStartPoint check as the non-weighted path
+            bool useRandomStart = randomStartPoint && state.Index == 0;
+
             return new WeightedMediaCollectionEnumerator(
                 groupedItems,
                 weights,
                 playbackOrder,
                 state,
-                _logger,
+                useRandomStart,
                 cancellationToken);
         }
-
         if (collectionKey.CollectionType is CollectionType.RerunFirstRun or CollectionType.RerunRerun)
         {
             await _rerunHelper.InitWithMediaItems(playout.Id, collectionKey, mediaItems, cancellationToken);

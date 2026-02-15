@@ -143,6 +143,15 @@
                 });
             }
             
+            int maxCount = newProbabilities.Max(p => p.Weight);
+            if (maxCount > 100)
+            {
+                foreach (var p in newProbabilities)
+                {
+                    p.Weight = Math.Max(1, (int)Math.Round((double)p.Weight / maxCount * 100));
+                }
+            }
+
             _showProbabilities = newProbabilities;
             StateHasChanged();
         }

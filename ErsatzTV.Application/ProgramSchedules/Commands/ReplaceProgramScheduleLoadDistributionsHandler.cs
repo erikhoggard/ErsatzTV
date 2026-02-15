@@ -36,6 +36,9 @@ public class ReplaceProgramScheduleLoadDistributionsHandler(IDbContextFactory<Tv
                 Weight = item.Weight
             }).ToList();
 
+        // Automatically enable custom probabilities when distributions are saved
+        programSchedule.UseCustomProbabilities = true;
+
         await dbContext.SaveChangesAsync();
 
         return Unit.Default;

@@ -1,7 +1,6 @@
 using ErsatzTV.Core.Domain;
 using ErsatzTV.Core.Extensions;
 using ErsatzTV.Core.Interfaces.Scheduling;
-using Microsoft.Extensions.Logging;
 
 namespace ErsatzTV.Core.Scheduling;
 
@@ -12,24 +11,21 @@ public class WeightedMediaCollectionEnumerator : IMediaCollectionEnumerator
     private readonly PlaybackOrder _playbackOrder;
     private readonly CloneableRandom _random;
     private readonly Lazy<Option<TimeSpan>> _lazyMinimumDuration;
-    
+
     private readonly Dictionary<int, IMediaCollectionEnumerator> _enumerators;
     private readonly List<int> _activeBuckets;
     private Option<MediaItem> _current;
     private readonly int _totalCount;
     private int _selectedBucket;
 
-    private readonly ILogger _logger;
-
     public WeightedMediaCollectionEnumerator(
         List<GroupedMediaItem> groupedItems,
         Map<int, int> weights,
         PlaybackOrder playbackOrder,
         CollectionEnumeratorState state,
-        ILogger logger,
+        bool randomStartPoint,
         CancellationToken cancellationToken)
     {
-        _logger = logger;
         _weights = weights;
         _playbackOrder = playbackOrder;
         _cancellationToken = cancellationToken;
@@ -48,41 +44,40 @@ public class WeightedMediaCollectionEnumerator : IMediaCollectionEnumerator
         .OrderBy(g => g.Key)
         .ToDictionary(g => g.Key, g => g.ToList());
 
-        _logger?.LogDebug("WeightedEnumerator: Found {Count} groups", groups.Count);
-        _logger?.LogDebug("WeightedEnumerator: Configured weights (ShowId -> Weight): {@Weights}", _weights);
-
         // Use different seeds for each bucket to ensure different shuffle orders
         var bucketRandom = new Random(state.Seed);
 
         foreach (var group in groups)
         {
             int bucketKey = group.Key;
-            int configuredWeight = _weights.Find(bucketKey).IfNone(50);
-            _logger?.LogDebug(
-                "WeightedEnumerator: Bucket ShowId={Key} has {Count} items, configured weight={Weight}",
-                bucketKey, group.Value.Count, configuredWeight);
             List<GroupedMediaItem> items = group.Value;
+            List<MediaItem> flatItems = items.SelectMany(gi => gi.Additional.Prepend(gi.First)).ToList();
 
             // Each bucket gets its own seed derived from the main seed
             int bucketSeed = bucketRandom.Next();
 
+            // Apply random start point: pick a random index within this bucket's items
+            int startIndex = randomStartPoint && flatItems.Count > 1
+                ? bucketRandom.Next(0, flatItems.Count - 1)
+                : 0;
+
             IMediaCollectionEnumerator enumerator = playbackOrder switch
             {
                 PlaybackOrder.Chronological => new ChronologicalMediaCollectionEnumerator(
-                    items.SelectMany(gi => gi.Additional.Prepend(gi.First)).ToList(),
-                    new CollectionEnumeratorState { Seed = bucketSeed, Index = 0 }),
+                    flatItems,
+                    new CollectionEnumeratorState { Seed = bucketSeed, Index = startIndex }),
                 PlaybackOrder.SeasonEpisode => new SeasonEpisodeMediaCollectionEnumerator(
-                    items.SelectMany(gi => gi.Additional.Prepend(gi.First)).ToList(),
-                    new CollectionEnumeratorState { Seed = bucketSeed, Index = 0 }),
+                    flatItems,
+                    new CollectionEnumeratorState { Seed = bucketSeed, Index = startIndex }),
                 PlaybackOrder.ShuffleInOrder => new ChronologicalMediaCollectionEnumerator(
-                    items.SelectMany(gi => gi.Additional.Prepend(gi.First)).ToList(),
-                    new CollectionEnumeratorState { Seed = bucketSeed, Index = 0 }),
+                    flatItems,
+                    new CollectionEnumeratorState { Seed = bucketSeed, Index = startIndex }),
                 PlaybackOrder.Random => new RandomizedMediaCollectionEnumerator(
-                    items.SelectMany(gi => gi.Additional.Prepend(gi.First)).ToList(),
-                    new CollectionEnumeratorState { Seed = bucketSeed, Index = 0 }),
+                    flatItems,
+                    new CollectionEnumeratorState { Seed = bucketSeed, Index = startIndex }),
                 _ => new ShuffledMediaCollectionEnumerator(
                     items,
-                    new CollectionEnumeratorState { Seed = bucketSeed, Index = 0 },
+                    new CollectionEnumeratorState { Seed = bucketSeed, Index = startIndex },
                     cancellationToken)
             };
 
@@ -160,9 +155,6 @@ public class WeightedMediaCollectionEnumerator : IMediaCollectionEnumerator
             }
         }
 
-        _logger?.LogDebug(
-            "WeightedEnumerator: Selected Bucket {Key} (Random {R}/{Total}, Weights: {@Weights})",
-            _selectedBucket, r, totalWeight, weightsToUse);
     }
 
     public void ResetState(CollectionEnumeratorState state)
